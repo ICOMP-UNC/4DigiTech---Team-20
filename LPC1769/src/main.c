@@ -1,272 +1,248 @@
-/*
- * @file main.c
- * @brief Main file for the project
- */
-
-#ifdef __USE_CMSIS
 #include "LPC17xx.h"
-#endif
+#include "lpc17xx_adc.h"
+#include "lpc17xx_dac.h"
+#include "lpc17xx_gpio.h"
+#include "lpc17xx_pinsel.h"
+#include "lpc17xx_timer.h"
+#include "lpc17xx_uart.h"
+#include "lpc17xx_gpdma.h" // Include the DMA header
 
-#ifdef __USE_MCUEXPRESSO
-#include <cr_section_macros.h> /* The cr_section_macros is specific to the MCUXpresso delivered toolchain */
-#endif
+#define PIN_PWM_OUT (1 << 1) // P2.1 para la salida PWM
+#define PORT_TWO 2           // Puerto 2
+#define PWM_FREQUENCY 100000 // Frecuencia de PWM en Hz
+#define PRESCALE_VALUE 1     // Valor de preescala para el timer
+#define MATCH_CHANNEL_0 0    // Canal de match 0
+#define MATCH_CHANNEL_1 1    // Canal de match 1
+#define MATCH_VALUE_0 (SystemCoreClock / 4) / PWM_FREQUENCY* dutyCycle / 100
+#define MATCH_VALUE_1 (SystemCoreClock / 4) / PWM_FREQUENCY
+#define BAUD_RATE 9600                                                    // Baud rate para UART
+#define ADC_FREQUENCY 200000                                              // Frecuencia de muestreo del ADC
+#define CALCULATE_DAC_VALUE(adcValue) (1023 - ((adcValue * 1023) / 4095)) // Cálculo de valor para el DAC
 
-#include "lpc17xx_gpio.h"    /* GPIO handling */
-#include "lpc17xx_pinsel.h"  /* Pin function selection */
-#include "lpc17xx_systick.h" /* SysTick handling */
-#include "lpc17xx_timer.h"   /* Timer handling*/
+volatile uint8_t receivedData = 0;    // Variable global para el dato recibido por UART
+volatile uint32_t dutyCycle = 90;     // Duty cycle inicial
+volatile uint16_t adcValue = 0;       // Valor global del ADC
+volatile uint16_t dacValue = 0;       // Valor global del DAC
+volatile uint8_t enableDACOutput = 0; // Variable para controlar salida del DAC
 
-/* Pin Definitions */
-#define LED_PIN ((uint32_t)(1 << 30))               /* P0.30 connected to LED */
-#define REED_SWITCH_OPEN_PIN ((uint32_t)(1 << 8))   /* P0.8 connected to REED SWITCH SENSOR (DOOR OPEN) */
-#define REED_SWITCH_CLOSED_PIN ((uint32_t)(1 << 9)) /* P0.9 connected to REED SWITCH SENSOR (DOOR CLOSED) */
-#define TEMP_SENSOR_PIN ((uint32_t)(1 << 16))       /* P0.16 connected to TEMPERATURE SENSOR */
-#define BATTERY_VH_PIN ((uint32_t)(1 << 20))        /* P0.20 connected to BATTERY - VERY HIGH*/
-#define BATTERY_H_PIN ((uint32_t)(1 << 19))         /* P0.19 connected to BATTERY - HIGH */
-#define BATTERY_L_PIN ((uint32_t)(1 << 18))         /* P0.18 connected to BATTERY - LOW */
-#define DOOR_OPEN_PIN ((uint32_t)(1 << 12))         /* P0.12 connected to DOOR */
-#define DOOR_CLOSE_PIN ((uint32_t)(1 << 13))        /* P0.13 connected to DOOR */
-#define BUTTON_INSIDE_PIN ((uint32_t)(1 << 21))     /* P0.21 connected to INSIDE BUTTON */
-#define BUTTON_OUTSIDE_PIN ((uint32_t)(1 << 22))    /* P0.22 connected to OUTSIDE BUTTON */
-
-/* GPIO Direction Definitions */
-#define INPUT 0
-#define OUTPUT 1
-
-/* Define time variables */
-#define SYSTICK_INITIAL_TIME 1 /* Expressed in milliseconds */
-
-/* Define edge variable */
-#define EDGE_RISING 0
-#define EDGE_FALLING 1
-
-/* Boolean Values */
-#define TRUE 1
-#define FALSE 0
-
-#define SECOND 10000
-#define COUNTER_LIMIT 1800
-
-/* Function prototypes */
-void configure_pins(void);
-void configure_systick(void);
-void configure_timer(void);
-
-uint8_t door_opening_flag = 0;
-uint8_t door_closing_flag = 0;
-uint8_t event_flag = 0;
-int close_count;
-
-int main(void)
+/**
+ * @brief Configures the GPIO settings for the specified pins.
+ *
+ * This function sets up the GPIO configuration for a specific pin on port 2.
+ * It initializes the pin with the following settings:
+ * - Port number: 2
+ * - Pin number: 1
+ * - Function number: 0 (GPIO function)
+ * - Pin mode: Pull-up
+ * - Open drain: Normal
+ *
+ * After configuring the pin, it sets the direction of the pin to output and
+ * clears the value of the pin.
+ */
+void configGPIO(void)
 {
-    SystemInit(); /*Initialize the system clock*/
+    PINSEL_CFG_Type PinCfg;
+    PinCfg.Portnum = PINSEL_PORT_2;
+    PinCfg.Pinnum = PINSEL_PIN_1;
+    PinCfg.Funcnum = PINSEL_FUNC_0;
+    PinCfg.Pinmode = PINSEL_PINMODE_PULLUP;
+    PinCfg.OpenDrain = PINSEL_PINMODE_NORMAL;
+    PINSEL_ConfigPin(&PinCfg);
 
-    configure_pins();
+    GPIO_SetDir(PORT_TWO, PIN_PWM_OUT, 1);
+    GPIO_ClearValue(PORT_TWO, PIN_PWM_OUT);
+}
 
-    configure_systick();
+/**
+ * @brief Configures the timer for PWM generation.
+ *
+ * This function sets up the timer with the specified configurations for PWM generation.
+ * It initializes the timer with a prescale value, configures match channels for PWM duty cycle
+ * and frequency, and enables the timer interrupt.
+ *
+ * Timer Configuration:
+ * - Prescale option: Microsecond value
+ * - Prescale value: 1
+ *
+ * Match Channel 0 Configuration:
+ * - Interrupt on match: Enabled
+ * - Reset on match: Disabled
+ * - Stop on match: Disabled
+ * - External match output type: No action
+ * - Match value: Calculated based on SystemCoreClock, PWM_FREQUENCY, and dutyCycle
+ *
+ * Match Channel 1 Configuration:
+ * - Interrupt on match: Enabled
+ * - Reset on match: Enabled
+ * - Match value: Calculated based on SystemCoreClock and PWM_FREQUENCY
+ *
+ * The function also enables the TIMER0 interrupt in the NVIC and starts the timer.
+ */
+void configTimer(void)
+{
+    TIM_TIMERCFG_Type TimerCfg;
+    TIM_MATCHCFG_Type MatchCfg;
 
-    SYSTICK_IntCmd(ENABLE); /* Enable SysTick interrupt */
+    TimerCfg.PrescaleOption = TIM_PRESCALE_USVAL;
+    TimerCfg.PrescaleValue = PRESCALE_VALUE;
+    TIM_Init(LPC_TIM0, TIM_TIMER_MODE, &TimerCfg);
 
-    SYSTICK_Cmd(ENABLE); /* Enable SysTick counter */
+    MatchCfg.MatchChannel = MATCH_CHANNEL_0;
+    MatchCfg.IntOnMatch = ENABLE;
+    MatchCfg.ResetOnMatch = DISABLE;
+    MatchCfg.StopOnMatch = DISABLE;
+    MatchCfg.ExtMatchOutputType = TIM_EXTMATCH_NOTHING;
+    MatchCfg.MatchValue = MATCH_VALUE_0;
+    TIM_ConfigMatch(LPC_TIM0, &MatchCfg);
 
-    NVIC_SetPriority(SysTick_IRQn, 0);
-    NVIC_SetPriority(TIMER0_IRQn, 1);
-    NVIC_SetPriority(EINT3_IRQn, 3); // CAMBIAR PRIORIDADES
+    MatchCfg.MatchChannel = MATCH_CHANNEL_1;
+    MatchCfg.IntOnMatch = ENABLE;
+    MatchCfg.ResetOnMatch = ENABLE;
+    MatchCfg.MatchValue = MATCH_VALUE_1;
+    TIM_ConfigMatch(LPC_TIM0, &MatchCfg);
 
-    NVIC_EnableIRQ(SysTick_IRQn);
     NVIC_EnableIRQ(TIMER0_IRQn);
-    NVIC_EnableIRQ(EINT3_IRQn);
-
-    while (TRUE)
-    {
-    }
-
-    return 0; /* Should never reach this */
-}
-
-void configure_pins(void)
-{
-    PINSEL_CFG_Type pin_cfg; /* Create a variable to store the configuration of the pin */
-
-    /* We need to configure the struct with the desired configuration */
-    pin_cfg.Portnum = PINSEL_PORT_0;           /* The port number is 0 */
-    pin_cfg.Pinnum = PINSEL_PIN_21;            /* The pin number is 21 */
-    pin_cfg.Funcnum = PINSEL_FUNC_0;           /* The function number is 0 */
-    pin_cfg.Pinmode = PINSEL_PINMODE_PULLUP;   /* The pin mode is pull-up */
-    pin_cfg.OpenDrain = PINSEL_PINMODE_NORMAL; /* The pin is in the normal mode */
-    PINSEL_ConfigPin(&pin_cfg);                // BUTTON_INSIDE_CONFIG
-    GPIO_SetDir(PINSEL_PORT_0, BUTTON_INSIDE_PIN, INPUT);
-
-    pin_cfg.Pinnum = PINSEL_PIN_22;
-    PINSEL_ConfigPin(&pin_cfg); // BUTTON_OUTSIDE_CONFIG
-    GPIO_SetDir(PINSEL_PORT_0, BUTTON_OUTSIDE_PIN, INPUT);
-
-    pin_cfg.Pinnum = PINSEL_PIN_8;
-    PINSEL_ConfigPin(&pin_cfg); // REED_SWITCH_OPEN_CONFIG
-    GPIO_SetDir(PINSEL_PORT_0, REED_SWITCH_OPEN_PIN, INPUT);
-
-    pin_cfg.Pinnum = PINSEL_PIN_9;
-    PINSEL_ConfigPin(&pin_cfg); // REED_SWITCH_CLOSED_CONFIG
-    GPIO_SetDir(PINSEL_PORT_0, REED_SWITCH_CLOSED_PIN, INPUT);
-
-    pin_cfg.Pinnum = PINSEL_PIN_18;
-    pin_cfg.Pinmode = PINSEL_PINMODE_PULLDOWN; // BATTERY_L_CONFIG
-    PINSEL_ConfigPin(&pin_cfg);
-    GPIO_SetDir(PINSEL_PORT_0, BATTERY_L_PIN, INPUT);
-
-    pin_cfg.Pinnum = PINSEL_PIN_19;
-    PINSEL_ConfigPin(&pin_cfg); // BATTERY_H_CONFIG
-    GPIO_SetDir(PINSEL_PORT_0, BATTERY_H_PIN, INPUT);
-
-    pin_cfg.Pinnum = PINSEL_PIN_20;
-    PINSEL_ConfigPin(&pin_cfg); // BATTERY_VH_CONFIG
-    GPIO_SetDir(PINSEL_PORT_0, BATTERY_VH_PIN, INPUT);
-
-    pin_cfg.Pinnum = PINSEL_PIN_16;
-    PINSEL_ConfigPin(&pin_cfg); // TEMP_SENSOR_CONFIG
-    GPIO_SetDir(PINSEL_PORT_0, TEMP_SENSOR_PIN, INPUT);
-
-    pin_cfg.Pinnum = PINSEL_PIN_12;
-    PINSEL_ConfigPin(&pin_cfg); // DOOR_OPEN_CONFIG
-    GPIO_SetDir(PINSEL_PORT_0, DOOR_OPEN_PIN, OUTPUT);
-
-    pin_cfg.Pinnum = PINSEL_PIN_13;
-    PINSEL_ConfigPin(&pin_cfg); // DOOR_CLOSE_CONFIG
-    GPIO_SetDir(PINSEL_PORT_0, DOOR_CLOSE_PIN, OUTPUT);
-
-    pin_cfg.Pinnum = PINSEL_PIN_22;
-    pin_cfg.Pinmode = PINSEL_PINMODE_PULLUP;
-    PINSEL_ConfigPin(&pin_cfg); // LED_CONFIG
-    GPIO_SetDir(PINSEL_PORT_0, LED_PIN, OUTPUT);
-
-    GPIO_IntCmd(PINSEL_PORT_0, TEMP_SENSOR_PIN, EDGE_RISING);
-    GPIO_IntCmd(PINSEL_PORT_0, BUTTON_INSIDE_PIN, EDGE_RISING);
-    GPIO_IntCmd(PINSEL_PORT_0, BUTTON_OUTSIDE_PIN, EDGE_RISING);
-    GPIO_IntCmd(PINSEL_PORT_0, REED_SWITCH_CLOSED_PIN, EDGE_RISING);
-    GPIO_IntCmd(PINSEL_PORT_0, REED_SWITCH_CLOSED_PIN, EDGE_RISING);
-}
-
-void configure_timer(void)
-{
-    TIM_TIMERCFG_Type timerConfig;
-
-    timerConfig.PrescaleOption = TIM_PRESCALE_USVAL;
-    timerConfig.PrescaleValue = (uint32_t)100; // 100 uS
-    TIM_Init(LPC_TIM0, TIM_TIMER_MODE, &timerConfig);
-
-    TIM_MATCHCFG_Type matchConfig;
-    matchConfig.MatchChannel = 0;
-    matchConfig.IntOnMatch = ENABLE;
-    matchConfig.ResetOnMatch = ENABLE;
-    matchConfig.StopOnMatch = DISABLE;
-    matchConfig.ExtMatchOutputType = TIM_EXTMATCH_NOTHING;
-    matchConfig.MatchValue = SECOND;
-
-    TIM_ConfigMatch(LPC_TIM0, &matchConfig);
     TIM_Cmd(LPC_TIM0, ENABLE);
 }
 
-void configure_systick(void)
+/**
+ * @brief Configures the UART0 peripheral with specified settings.
+ *
+ * This function configures the UART0 peripheral on the LPC1769 microcontroller.
+ * It sets up the pin configuration for UART0, initializes the UART0 peripheral
+ * with a baud rate of 9600, no parity, 8 data bits, and 1 stop bit. Additionally,
+ * it enables the receive interrupt for UART0 and activates the UART0 interrupt
+ * in the Nested Vectored Interrupt Controller (NVIC).
+ *
+ * Pin Configuration:
+ * - Port: 0
+ * - Pin: 3
+ * - Function: 1 (UART0)
+ * - Pin Mode: 0 (default)
+ * - Open Drain: 0 (disabled)
+ *
+ * UART Configuration:
+ * - Baud Rate: 9600
+ * - Parity: None
+ * - Data Bits: 8
+ * - Stop Bits: 1
+ *
+ * Interrupts:
+ * - Enables the receive interrupt for UART0.
+ * - Activates the UART0 interrupt in the NVIC.
+ */
+void configUART(void)
 {
-    SYSTICK_InternalInit(SYSTICK_INITIAL_TIME); /* Initialize the SysTick timer with a time interval of 1 ms */
-    SYSTICK_IntCmd(ENABLE);
-    SYSTICK_Cmd(ENABLE);
+    PINSEL_CFG_Type pinConfig;
+    pinConfig.Portnum = PINSEL_PORT_0;
+    pinConfig.Pinnum = PINSEL_PIN_3;
+    pinConfig.Funcnum = PINSEL_FUNC_1;
+    pinConfig.Pinmode = PINSEL_PINMODE_PULLUP;
+    pinConfig.OpenDrain = PINSEL_PINMODE_NORMAL;
+    PINSEL_ConfigPin(&pinConfig);
+
+    UART_CFG_Type UARTConfigStruct;
+    UARTConfigStruct.Baud_rate = BAUD_RATE;
+    UARTConfigStruct.Parity = UART_PARITY_NONE;
+    UARTConfigStruct.Databits = UART_DATABIT_8;
+    UARTConfigStruct.Stopbits = UART_STOPBIT_1;
+
+    UART_Init(LPC_UART0, &UARTConfigStruct);
+    UART_TxCmd(LPC_UART0, DISABLE);
+
+    // Habilita la interrupción de recepción en UART
+    UART_IntConfig(LPC_UART0, UART_INTCFG_RBR, ENABLE);
+    NVIC_EnableIRQ(UART0_IRQn); // Activa la interrupción de UART0 en el NVIC
 }
 
-void SysTick_Handler(void)
+void UART0_IRQHandler(void)
 {
-    SYSTICK_ClearCounterFlag(); /* Clear interrupt flag */
-
-    uint32_t valorGPIO = GPIO_ReadValue(PINSEL_PORT_0);
-
-    if (valorGPIO & (1 << 18))
+    if (UART_GetIntId(LPC_UART0) & UART_IIR_INTID_RDA)
     {
-        SYSTICK_InternalInit(100); // REVISAR ( numeros magicos)
-    }
-    else if (valorGPIO & (1 << 19))
-    {
-        SYSTICK_InternalInit(50);
-    }
-    else if (valorGPIO & (1 << 20))
-    {
-        SYSTICK_InternalInit(20);
-    }
-
-    if (GPIO_ReadValue(PINSEL_PORT_0) & LED_PIN)
-    {
-        GPIO_ClearValue(PINSEL_PORT_0, LED_PIN); /* Turn off LED */
-    }
-    else
-    {
-        GPIO_SetValue(PINSEL_PORT_0, LED_PIN); /* Turn on LED */
-    }
-}
-
-// Overwrite the interrupt handle routine for GPIO
-void EINT3_IRQHandler(void)
-{
-    if (door_closing_flag && GPIO_GetIntStatus(PINSEL_PORT_0, REED_SWITCH_CLOSED_PIN, EDGE_RISING))
-    {
-        GPIO_ClearValue(PINSEL_PORT_0, DOOR_CLOSE_PIN);
-        door_closing_flag = 0;
-        event_flag = 1;
-    }
-    if (door_opening_flag && GPIO_GetIntStatus(PINSEL_PORT_0, REED_SWITCH_OPEN_PIN, EDGE_RISING))
-    {
-        GPIO_ClearValue(PINSEL_PORT_0, DOOR_OPEN_PIN);
-        door_opening_flag = 0;
-        event_flag = 0;
-    }
-    if (GPIO_GetIntStatus(PINSEL_PORT_0, TEMP_SENSOR_PIN, EDGE_RISING) &&
-        (GPIO_ReadValue(PINSEL_PORT_0) & REED_SWITCH_OPEN_PIN))
-    {
-        close_door();
-    }
-    if (GPIO_GetIntStatus(PINSEL_PORT_0, BUTTON_INSIDE_PIN, EDGE_RISING) &&
-        (GPIO_ReadValue(PINSEL_PORT_0) & REED_SWITCH_OPEN_PIN))
-    {
-        close_door();
-    }
-    if (GPIO_GetIntStatus(PINSEL_PORT_0, BUTTON_INSIDE_PIN, EDGE_RISING) &&
-        (GPIO_ReadValue(PINSEL_PORT_0) & REED_SWITCH_CLOSED_PIN))
-    {
-        open_door();
-    }
-    if (GPIO_GetIntStatus(PINSEL_PORT_0, BUTTON_OUTSIDE_PIN, EDGE_RISING) &&
-        (GPIO_ReadValue(PINSEL_PORT_0) & REED_SWITCH_OPEN_PIN))
-    {
-        close_door();
-    }
-    if (GPIO_GetIntStatus(PINSEL_PORT_0, BUTTON_OUTSIDE_PIN, EDGE_RISING) &&
-        (GPIO_ReadValue(PINSEL_PORT_0) & REED_SWITCH_CLOSED_PIN))
-    {
-        open_door();
+        receivedData = UART_ReceiveByte(LPC_UART0);
+        if (receivedData >= '1')
+        {
+            dutyCycle = 10;
+            enableDACOutput = 1;
+        }
+        else
+        {
+            dutyCycle = 90;
+            enableDACOutput = 0;
+        }
+        TIM_UpdateMatchValue(LPC_TIM0, 0, MATCH_VALUE_0);
     }
 }
 
-void TIMER0_IRQHandler()
+void configADC(void)
 {
-    if ((!event_flag) && (GPIO_ReadValue(PINSEL_PORT_0) & REED_SWITCH_OPEN_PIN))
-    {
-        close_count++;
-    }
+    PINSEL_CFG_Type PinCfg;
+    PinCfg.Portnum = PINSEL_PORT_0;
+    PinCfg.Pinnum = PINSEL_PIN_23;
+    PinCfg.Funcnum = PINSEL_FUNC_1;
+    PinCfg.Pinmode = PINSEL_PINMODE_PULLUP;
+    PINSEL_ConfigPin(&PinCfg);
 
-    if (close_count == COUNTER_LIMIT)
+    ADC_Init(LPC_ADC, ADC_FREQUENCY);
+    ADC_ChannelCmd(LPC_ADC, ADC_CHANNEL_0, ENABLE);
+}
+
+void configDAC(void)
+{
+    PINSEL_CFG_Type PinCfg;
+    PinCfg.Portnum = PINSEL_PORT_0;
+    PinCfg.Pinnum = PINSEL_PIN_26;
+    PinCfg.Funcnum = PINSEL_FUNC_2;
+    PINSEL_ConfigPin(&PinCfg);
+
+    DAC_Init(LPC_DAC);
+}
+
+void updateADCandDAC(void)
+{
+    // Inicia y espera la conversión del ADC
+    ADC_StartCmd(LPC_ADC, ADC_START_NOW);
+    while (!(ADC_ChannelGetStatus(LPC_ADC, ADC_CHANNEL_0, ADC_DATA_DONE)))
+        ;
+    adcValue = ADC_ChannelGetData(LPC_ADC, ADC_CHANNEL_0);
+
+    // Invierte el valor del ADC para el DAC: ADC alto -> DAC bajo, ADC bajo -> DAC alto
+    dacValue = CALCULATE_DAC_VALUE(adcValue);
+
+    // Actualiza el DAC con el valor invertido si está habilitado
+    if (enableDACOutput)
     {
-        close_door();
+        DAC_UpdateValue(LPC_DAC, dacValue);
     }
 }
 
-void close_door(void)
+void TIMER0_IRQHandler(void)
 {
-    GPIO_SetValue(PINSEL_PORT_0, DOOR_CLOSE_PIN);
-    door_closing_flag = 1;
-    event_flag = 1;
-    close_count = 0;
+    if (TIM_GetIntStatus(LPC_TIM0, TIM_MR0_INT))
+    {
+        GPIO_SetValue(PORT_TWO, PIN_PWM_OUT);
+        TIM_ClearIntPending(LPC_TIM0, TIM_MR0_INT);
+    }
+    if (TIM_GetIntStatus(LPC_TIM0, TIM_MR1_INT))
+    {
+        GPIO_ClearValue(PORT_TWO, PIN_PWM_OUT);
+        TIM_ClearIntPending(LPC_TIM0, TIM_MR1_INT);
+    }
 }
 
-void open_door(void)
+int main(void)
 {
-    GPIO_SetValue(PINSEL_PORT_0, DOOR_OPEN_PIN);
-    door_opening_flag = 1;
+    configGPIO();
+    configTimer();
+    configUART();
+    configADC();
+    configDAC();
+
+    while (1)
+    {
+        // Actualiza continuamente el ADC y el DAC
+        updateADCandDAC();
+    }
+
+    return 0;
 }
