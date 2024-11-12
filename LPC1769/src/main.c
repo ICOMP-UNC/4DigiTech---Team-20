@@ -1,11 +1,11 @@
 #include "LPC17xx.h"
 #include "lpc17xx_adc.h"
 #include "lpc17xx_dac.h"
+#include "lpc17xx_gpdma.h" // Include the DMA header
 #include "lpc17xx_gpio.h"
 #include "lpc17xx_pinsel.h"
 #include "lpc17xx_timer.h"
 #include "lpc17xx_uart.h"
-#include "lpc17xx_gpdma.h" // Include the DMA header
 
 #define PIN_PWM_OUT (1 << 1) // P2.1 para la salida PWM
 #define PORT_TWO 2           // Puerto 2
@@ -18,24 +18,56 @@
 #define BAUD_RATE 9600                                                    // Baud rate para UART
 #define ADC_FREQUENCY 200000                                              // Frecuencia de muestreo del ADC
 #define CALCULATE_DAC_VALUE(adcValue) (1023 - ((adcValue * 1023) / 4095)) // Cálculo de valor para el DAC
+#define DMA_CHANNEL_0 0                                                   // Canal 0 para DMA
+#define PERIFERICAL 0                                                     // Transferencia de periférico a memoria
+#define DMA_BUFFER_SIZE 10                                                // Tamaño del buffer de DMA
 
 volatile uint8_t receivedData = 0;    // Variable global para el dato recibido por UART
 volatile uint32_t dutyCycle = 90;     // Duty cycle inicial
 volatile uint16_t adcValue = 0;       // Valor global del ADC
 volatile uint16_t dacValue = 0;       // Valor global del DAC
 volatile uint8_t enableDACOutput = 0; // Variable para controlar salida del DAC
+volatile uint32_t data_Rx[DMA_BUFFER_SIZE];
+
+void configGPIO(void);
+void configTimer(void);
+void configUART(void);
+void configADC(void);
+void configDAC(void);
+void configDMA(void);
+
+/**
+ * @brief Configures the DMA (Direct Memory Access) for UART0 reception.
+ *
+ * This function initializes the GPDMA (General Purpose DMA) and sets up the DMA channel
+ * for transferring data from the UART0 peripheral to a memory buffer. It configures the
+ * DMA channel with the specified parameters and enables the DMA interrupt.
+ *
+ */
+void configDMA()
+{
+    GPDMA_Init();
+    GPDMA_Channel_CFG_Type GPDMACfg;
+    GPDMACfg.ChannelNum = DMA_CHANNEL_0;
+    GPDMACfg.SrcMemAddr = PERIFERICAL;
+    GPDMACfg.DstMemAddr = (uint32_t)data_Rx;
+    GPDMACfg.TransferSize = DMA_BUFFER_SIZE;
+    GPDMACfg.TransferWidth = GPDMA_WIDTH_WORD;
+    GPDMACfg.TransferType = GPDMA_TRANSFERTYPE_P2M;
+    GPDMACfg.SrcConn = GPDMA_CONN_UART0_Rx;
+    GPDMACfg.DstConn = 0;
+    GPDMACfg.DMALLI = 0;
+    GPDMA_Setup(&GPDMACfg);
+    GPDMA_ClearIntPending(GPDMA_STATCLR_INTTC, 0);
+    GPDMA_ChannelCmd(0, ENABLE);
+
+    NVIC_EnableIRQ(DMA_IRQn);
+}
 
 /**
  * @brief Configures the GPIO settings for the specified pins.
  *
  * This function sets up the GPIO configuration for a specific pin on port 2.
- * It initializes the pin with the following settings:
- * - Port number: 2
- * - Pin number: 1
- * - Function number: 0 (GPIO function)
- * - Pin mode: Pull-up
- * - Open drain: Normal
- *
  * After configuring the pin, it sets the direction of the pin to output and
  * clears the value of the pin.
  */
@@ -58,25 +90,7 @@ void configGPIO(void)
  *
  * This function sets up the timer with the specified configurations for PWM generation.
  * It initializes the timer with a prescale value, configures match channels for PWM duty cycle
- * and frequency, and enables the timer interrupt.
- *
- * Timer Configuration:
- * - Prescale option: Microsecond value
- * - Prescale value: 1
- *
- * Match Channel 0 Configuration:
- * - Interrupt on match: Enabled
- * - Reset on match: Disabled
- * - Stop on match: Disabled
- * - External match output type: No action
- * - Match value: Calculated based on SystemCoreClock, PWM_FREQUENCY, and dutyCycle
- *
- * Match Channel 1 Configuration:
- * - Interrupt on match: Enabled
- * - Reset on match: Enabled
- * - Match value: Calculated based on SystemCoreClock and PWM_FREQUENCY
- *
- * The function also enables the TIMER0 interrupt in the NVIC and starts the timer.
+ * and frequency, and enables the timer interrupt. Additionally, it activates the timer.
  */
 void configTimer(void)
 {
@@ -112,24 +126,7 @@ void configTimer(void)
  * It sets up the pin configuration for UART0, initializes the UART0 peripheral
  * with a baud rate of 9600, no parity, 8 data bits, and 1 stop bit. Additionally,
  * it enables the receive interrupt for UART0 and activates the UART0 interrupt
- * in the Nested Vectored Interrupt Controller (NVIC).
- *
- * Pin Configuration:
- * - Port: 0
- * - Pin: 3
- * - Function: 1 (UART0)
- * - Pin Mode: 0 (default)
- * - Open Drain: 0 (disabled)
- *
- * UART Configuration:
- * - Baud Rate: 9600
- * - Parity: None
- * - Data Bits: 8
- * - Stop Bits: 1
- *
- * Interrupts:
- * - Enables the receive interrupt for UART0.
- * - Activates the UART0 interrupt in the NVIC.
+ * in the NVIC.
  */
 void configUART(void)
 {
@@ -147,7 +144,15 @@ void configUART(void)
     UARTConfigStruct.Databits = UART_DATABIT_8;
     UARTConfigStruct.Stopbits = UART_STOPBIT_1;
 
+    UART_FIFO_CFG_Type UARTFIFOConfigStruct;
+    UARTFIFOConfigStruct.FIFO_DMAMode = ENABLE; // Enable DMA mode for FIFO
+    UARTFIFOConfigStruct.FIFO_Level = UART_FIFO_TRGLEV0;
+    UARTFIFOConfigStruct.FIFO_ResetRxBuf = ENABLE;
+    UARTFIFOConfigStruct.FIFO_ResetTxBuf = ENABLE;
+
+    UART_ConfigStructInit(&UARTConfigStruct); // Initialize UART with default settings
     UART_Init(LPC_UART0, &UARTConfigStruct);
+    UART_FIFOConfig(LPC_UART0, &UARTFIFOConfigStruct); // Configure FIFO
     UART_TxCmd(LPC_UART0, DISABLE);
 
     // Habilita la interrupción de recepción en UART
@@ -230,6 +235,21 @@ void TIMER0_IRQHandler(void)
     }
 }
 
+void DMA_IRQHandler()
+{
+    if (GPDMA_IntGetStatus(GPDMA_STAT_INT, 0))
+    {
+        GPDMA_ClearIntPending(GPDMA_STATCLR_INTTC, 0); // Clear interrupt on transfer complete
+    }
+    else if (GPDMA_IntGetStatus(GPDMA_STAT_INTERR, 0) || GPDMA_IntGetStatus(GPDMA_STAT_INTERR, 1))
+    {
+        {
+            while (1)
+                ; // Stay in an infinite loop on error
+        }
+    }
+}
+
 int main(void)
 {
     configGPIO();
@@ -237,7 +257,7 @@ int main(void)
     configUART();
     configADC();
     configDAC();
-
+    configDMA();
     while (1)
     {
         // Actualiza continuamente el ADC y el DAC
