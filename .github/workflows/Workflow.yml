@@ -10,15 +10,15 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      - name: Install Arm GNU Toolchain (arm-none-eabi-gcc)
-        uses: carlosperate/arm-none-eabi-gcc-action@v1
-        with:
-          release: "13.3.Rel1"
-
       - name: Checkout repository
         uses: actions/checkout@v3
         with:
           submodules: recursive
+
+      - name: Install Arm GNU Toolchain (arm-none-eabi-gcc)
+        uses: carlosperate/arm-none-eabi-gcc-action@v1
+        with:
+          release: "13.3.Rel1"
 
       - name: Install dependencies
         uses: awalsh128/cache-apt-pkgs-action@latest
@@ -28,36 +28,66 @@ jobs:
 
       # Run style check for STM32
       - name: Run style check for STM32
-        uses: ./.github/actions/style
-        with:
-          path: STM32
+        run: |
+          if [ -d "STM32/src" ]; then
+            cd STM32
+            ./github/actions/style --path src
+          else
+            echo "STM32/src directory not found."
+            exit 1
+          fi
 
       # Run style check for LPC1769
       - name: Run style check for LPC1769
-        uses: ./.github/actions/style
-        with:
-          path: LPC1769
+        run: |
+          if [ -d "LPC1769/src" ]; then
+            cd LPC1769
+            ./github/actions/style --path src
+          else
+            echo "LPC1769/src directory not found."
+            exit 1
+          fi
 
       # Run documentation check for STM32
       - name: Run documentation check for STM32
-        uses: ./.github/actions/document
-        with:
-          path: STM32
+        run: |
+          if [ -d "STM32/src" ]; then
+            cd STM32
+            ./github/actions/document --path src
+          else
+            echo "STM32/src directory not found."
+            exit 1
+          fi
 
       # Run documentation check for LPC1769
       - name: Run documentation check for LPC1769
-        uses: ./.github/actions/document
-        with:
-          path: LPC1769
+        run: |
+          if [ -d "LPC1769/src" ]; then
+            cd LPC1769
+            ./github/actions/document --path src
+          else
+            echo "LPC1769/src directory not found."
+            exit 1
+          fi
 
       # Build project for STM32
-      - name: Build STM32 project
-        uses: ./.github/actions/build
-        with:
-          path: STM32
+      - name: Build project for STM32
+        run: |
+          if [ -d "STM32/src" ]; then
+            cd STM32
+            ./github/actions/build --path src
+          else
+            echo "STM32/src directory not found."
+            exit 1
+          fi
 
       # Build project for LPC1769
-      - name: Build LPC1769 project
-        uses: ./.github/actions/build
-        with:
-          path: LPC1769
+      - name: Build project for LPC1769
+        run: |
+          if [ -d "LPC1769/src" ]; then
+            cd LPC1769
+            ./github/actions/build --path src
+          else
+            echo "LPC1769/src directory not found."
+            exit 1
+          fi
