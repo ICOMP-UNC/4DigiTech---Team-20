@@ -28,30 +28,36 @@ jobs:
 
       # Run style check for STM32
       - name: Run style check for STM32
-        run: ./.github/actions/style/action.yml --path STM32
-        shell: bash
+        uses: ./.github/actions/style
+        with:
+          path: STM32
 
       # Run style check for LPC1769
       - name: Run style check for LPC1769
-        run: ./.github/actions/style/action.yml --path LPC1769
-        shell: bash
+        uses: ./.github/actions/style
+        with:
+          path: LPC1769
 
       # Run documentation check for STM32
       - name: Run documentation check for STM32
-        run: ./.github/actions/document/action.yml --path STM32
-        shell: bash
+        uses: ./.github/actions/document
+        with:
+          path: STM32
 
       # Run documentation check for LPC1769
       - name: Run documentation check for LPC1769
-        run: ./.github/actions/document/action.yml --path LPC1769
-        shell: bash
+        uses: ./.github/actions/document
+        with:
+          path: LPC1769
 
       # Build project for STM32
       - name: Build STM32 project
-        run: ./.github/actions/build/action.yml --path STM32
-        shell: bash
+        uses: ./.github/actions/build
+        with:
+          path: STM32
 
       # Build project for LPC1769
       - name: Build LPC1769 project
-        run: ./.github/actions/build/action.yml --path LPC1769
-        shell: bash
+        uses: ./.github/actions/build
+        with:
+          path: LPC1769
