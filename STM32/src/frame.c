@@ -1,4 +1,4 @@
-#include "frame.h" 
+#include "frame.h"
 
 void process_received_frame(void)
 {
