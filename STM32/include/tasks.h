@@ -21,7 +21,7 @@
  * particle counts. The data is then sent using the `send_data_frame` function. The task
  * also monitors its stack usage and prints the high water mark for debugging purposes.
  *
- * @param args Pointer to task arguments (unused).
+ * @param pvParameters Pointer to task arguments (unused).
  */
 void uart_task(void* pvParameters);
 
@@ -31,7 +31,7 @@ void uart_task(void* pvParameters);
  * This task continuously handles DMA ADC transfers and monitors the stack high water mark.
  * It prints the stack high water mark to the console for debugging purposes.
  *
- * @param args Pointer to the arguments passed to the task (unused).
+ * @param pvParameters Pointer to the arguments passed to the task (unused).
  */
 void adc_task(void* pvParameters);
 
@@ -42,7 +42,7 @@ void adc_task(void* pvParameters);
  * It also monitors the stack high water mark for the task and prints it
  * to the console.
  *
- * @param args Pointer to the arguments passed to the task (unused).
+ * @param pvParameters Pointer to the arguments passed to the task (unused).
  */
 void frame_processing_task(void* pvParameters);
 
