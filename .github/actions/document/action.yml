@@ -48,13 +48,14 @@ runs:
     - uses: actions/upload-artifact@v4
       if: failure()
       with:
-        name: "Doxygen Errors"
+        name: "Doxygen Errors - ${{ github.run_id }}"
         path: ${{ inputs.path }}/dox_errors.txt
         retention-days: 1
 
+    # Upload documentation as an artifact, when successful
     - uses: actions/upload-artifact@v4
       if: success()
       with:
-        name: "Doxygen Documentation"
+        name: "Doxygen Documentation - ${{ github.run_id }}"
         path: ${{ inputs.path }}/doc
         retention-days: 1

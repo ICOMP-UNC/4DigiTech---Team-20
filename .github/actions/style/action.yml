@@ -36,6 +36,6 @@ runs:
     - uses: actions/upload-artifact@v4
       if: failure()
       with:
-        name: Clang-format errors for ${{ inputs.path }}
+        name: "Clang-format errors for ${{ inputs.path }} - ${{ github.run_id }}"
         path: ${{ inputs.path }}/clang_format_errors.txt
         retention-days: 1
