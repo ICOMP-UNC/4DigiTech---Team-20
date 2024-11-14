@@ -26,23 +26,18 @@ jobs:
           packages: doxygen gcovr lcov cppcheck graphviz clang-format make
           version: 1.0
 
-      # Run style check for STM32
       - name: Run style check for STM32
-        uses: ./.github/actions/style
+        uses: ${{ github.workspace }}/.github/actions/style
         with:
-          path: STM32
+          path: ${{ github.workspace }}/STM32
 
-      # Run documentation check for STM32
       - name: Run documentation check for STM32
-        uses: ./.github/actions/document
+        uses: ${{ github.workspace }}/.github/actions/document
         with:
-          path: STM32
+          path: ${{ github.workspace }}/STM32
       
-      # Build STM32 project using PlatformIO and LPC1769 project using Make
       - name: Build STM32 Project with PlatformIO and LPC1769 Project with Make
-        uses: ./.github/actions/build
+        uses: ${{ github.workspace }}/.github/actions/build
         with:
-          path_stm32: STM32
-          path_lpc: LPC1769
-      
-
+          path_stm32: ${{ github.workspace }}/STM32
+          path_lpc: ${{ github.workspace }}/LPC1769
