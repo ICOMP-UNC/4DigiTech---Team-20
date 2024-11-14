@@ -11,6 +11,10 @@ SRCS =	newlib_stubs.c \
 		lpc17xx_systick.c \
 		lpc17xx_timer.c \
 		lpc17xx_exti.c \
+		lpc17xx_uart.c \
+		lpc17xx_adc.c \
+		lpc17xx_gpdma.c \
+		lpc17xx_dac.c \
 		main.c
  
 	 
