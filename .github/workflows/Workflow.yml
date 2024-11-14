@@ -38,9 +38,11 @@ jobs:
         with:
           path: STM32
       
-      # Build STM32 project using PlatformIO
-      - name: Build STM32 Project
-        uses: ./.github/actions/build
+      # Build STM32 project using PlatformIO and LPC1769 project using Make
+      - name: Build STM32 Project with PlatformIO and LPC1769 Project with Make
+        uses: ./.github/actions/build-platformio
         with:
-          path: STM32
+          path_stm32: STM32
+          path_lpc: LPC1769
+      
 
