@@ -10,6 +10,11 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
+      - name: Install Arm GNU Toolchain (arm-none-eabi-gcc)
+        uses: carlosperate/arm-none-eabi-gcc-action@v1
+        with:
+          release: "13.3.Rel1"
+
       - name: Checkout repository
         uses: actions/checkout@v3
         with:
@@ -18,7 +23,7 @@ jobs:
       - name: Install dependencies
         uses: awalsh128/cache-apt-pkgs-action@latest
         with:
-          packages: clang-format
+          packages: doxygen gcovr lcov cppcheck graphviz clang-format make
           version: 1.0
 
       # Run style check for STM32
@@ -33,8 +38,3 @@ jobs:
         with:
           path: STM32
 
-      # Build STM32 project using PlatformIO
-      - name: Build STM32 Project
-        uses: ./.github/actions/build
-        with:
-          path: STM32
