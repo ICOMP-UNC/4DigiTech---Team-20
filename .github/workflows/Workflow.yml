@@ -27,17 +27,19 @@ jobs:
           version: 1.0
 
       - name: Run style check for STM32
-        uses: ${{ github.workspace }}/.github/actions/style
+        uses: ./.github/actions/style
         with:
-          path: ${{ github.workspace }}/STM32
+          path: STM32
 
       - name: Run documentation check for STM32
-        uses: ${{ github.workspace }}/.github/actions/document
+        uses: ./.github/actions/document
         with:
-          path: ${{ github.workspace }}/STM32
+          path: STM32
       
       - name: Build STM32 Project with PlatformIO and LPC1769 Project with Make
-        uses: ${{ github.workspace }}/.github/actions/build
+        uses: ./.github/actions/build
         with:
-          path_stm32: ${{ github.workspace }}/STM32
-          path_lpc: ${{ github.workspace }}/LPC1769
+          path_stm32: STM32
+          path_lpc: LPC1769
+      
+
