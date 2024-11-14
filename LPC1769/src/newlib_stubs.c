@@ -130,10 +130,13 @@ int _isatty(int file)
 {
     switch (file)
     {
-        case STDOUT_FILENO:
-        case STDERR_FILENO:
-        case STDIN_FILENO: return 1;
-        default: errno = EBADF; return 0;
+    case STDOUT_FILENO:
+    case STDERR_FILENO:
+    case STDIN_FILENO:
+        return 1;
+    default:
+        errno = EBADF;
+        return 0;
     }
 }
 
@@ -215,10 +218,12 @@ int _read(int file, char* ptr, int len)
 {
     switch (file)
     {
-        case STDIN_FILENO:
-            // Implement input reading if necessary
-            return 0;
-        default: errno = EBADF; return -1;
+    case STDIN_FILENO:
+        // Implement input reading if necessary
+        return 0;
+    default:
+        errno = EBADF;
+        return -1;
     }
 }
 
@@ -282,10 +287,12 @@ int _write(int file, char* ptr, int len)
 {
     switch (file)
     {
-        case STDOUT_FILENO:
-        case STDERR_FILENO:
-            // Implement output writing if necessary
-            return len;
-        default: errno = EBADF; return -1;
+    case STDOUT_FILENO:
+    case STDERR_FILENO:
+        // Implement output writing if necessary
+        return len;
+    default:
+        errno = EBADF;
+        return -1;
     }
 }

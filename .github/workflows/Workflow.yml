@@ -30,16 +30,24 @@ jobs:
         uses: ./.github/actions/style
         with:
           path: STM32
-
+      
+      - name: Run style check for LPC1769
+        uses: ./.github/actions/style
+        with:
+          path: LPC1769
+  
       - name: Run documentation check for STM32
         uses: ./.github/actions/document
         with:
           path: STM32
+
+      - name: Run documentation check for LPC1769
+        uses: ./.github/actions/document
+        with:
+          path: LPC1769
       
       - name: Build STM32 Project with PlatformIO and LPC1769 Project with Make
         uses: ./.github/actions/build
         with:
           path_stm32: STM32
           path_lpc: LPC1769
-      
-

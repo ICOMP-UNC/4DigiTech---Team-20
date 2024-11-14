@@ -15,6 +15,10 @@ SRCS =	newlib_stubs.c \
 		lpc17xx_adc.c \
 		lpc17xx_gpdma.c \
 		lpc17xx_dac.c \
+		global.c \
+		config.c \
+		utils.c \
+		isr.c \
 		main.c
  
 	 
@@ -55,7 +59,7 @@ CFLAGS += -D ALIGN_STRUCT_END=__attribute\(\(aligned\(4\)\)\)
 CFLAGS += -D__USE_CMSIS
 CFLAGS += -mthumb -mcpu=cortex-m3 
 CFLAGS += -fno-builtin -mfloat-abi=soft	-ffunction-sections -fdata-sections -fmessage-length=0 -funsigned-char
- 
+
 ODFLAGS	= -x
 LDFLAGS += -Wl,-Map,$(PROJ_NAME).map
 
@@ -117,3 +121,4 @@ clean:
 	rm -f $(BUILD_DIR)/$(PROJ_NAME).dmp
 	rm -f $(BUILD_DIR)/$(PROJ_NAME).map
 	rm -f $(OBJS)
+	
