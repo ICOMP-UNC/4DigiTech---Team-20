@@ -1,16 +1,23 @@
-name: "ARM build"
-description: "Compile the project"
+name: "PlatformIO Build"
+description: "Compile the STM32 project using PlatformIO"
 
 inputs:
   path:
     required: true
-    description: "Build project"
+    description: "Path to the project to build"
     default: .
 
 runs:
   using: "composite"
   steps:
-    - name: "Run clang-format"
+    - name: "Install PlatformIO"
       shell: bash
       run: |
-        make -C ${{ inputs.path }} all
+        python3 -m pip install --upgrade pip
+        pip install platformio
+
+    - name: "Build project with PlatformIO"
+      shell: bash
+      run: |
+        cd ${{ inputs.path }}
+        platformio run
