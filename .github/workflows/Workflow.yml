@@ -37,4 +37,10 @@ jobs:
         uses: ./.github/actions/document
         with:
           path: STM32
+      
+      # Build STM32 project using PlatformIO
+      - name: Build STM32 Project
+        uses: ./.github/actions/build
+        with:
+          path: STM32
 
