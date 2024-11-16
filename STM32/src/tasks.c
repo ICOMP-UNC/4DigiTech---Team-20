@@ -6,7 +6,7 @@ void uart_task(void* args)
     while (1)
     {
 
-        uint16_t pm2_5_value = (adc_value * 300) / 4095; // 12-bit ADC
+        uint16_t pm2_5_value = (adc_value * 100) / 4095; // 12-bit ADC
         uint16_t sensor_data[13] = {
             150,         // Data 1: PM1.0 concentration in µg/m³ (standard particles) (Frame 4 and 5)
             pm2_5_value, // Data 2: Variable PM2.5 concentration in µg/m³ (scaled from adc_value) (Frame 6 and 7)
@@ -25,7 +25,7 @@ void uart_task(void* args)
         send_data_frame(sensor_data);
         UBaseType_t uartHighWaterMark = uxTaskGetStackHighWaterMark(uartTaskHandle);
         printf("UART Task Stack High Water Mark: %lu\n", uartHighWaterMark);
-        vTaskDelay(pdMS_TO_TICKS(5000));
+        vTaskDelay(pdMS_TO_TICKS(500));
     }
 }
 

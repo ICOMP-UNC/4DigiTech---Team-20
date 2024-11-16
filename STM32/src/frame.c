@@ -50,6 +50,7 @@ void send_data_frame(uint16_t* sensor_data)
     {
         usart_send_blocking(USART2, uart_tx_buffer[i]);
     }
+    gpio_toggle(GPIOC, GPIO13);
 }
 
 int calculate_aqi_from_pm2_5(uint16_t pm2_5)
