@@ -57,15 +57,20 @@ uint32_t calculateDutyCycle(uint32_t aqi)
 {
     if (aqi == AQI_THRESHOLD_OFF)
     {
+        enableDACOutput = 0;
+        DAC_UpdateValue(LPC_DAC, 0);
         return DUTY_CYCLE_OFF;
     }
     else if (aqi >= AQI_THRESHOLD_MAX)
     {
+        enableDACOutput = 1;
         return DUTY_CYCLE_MAX;
     }
     else
     {
-        return (aqi * DUTY_CYCLE_MAX) / AQI_THRESHOLD_MAX;
+        enableDACOutput = 0;
+        DAC_UpdateValue(LPC_DAC, 0);
+        return (DUTY_CYCLE_MAX - (aqi * 90) / AQI_THRESHOLD_MAX);
     }
 }
 
@@ -96,7 +101,6 @@ void processDMAReceivedData(void)
             aqi = calculate_aqi_from_pm2_5(pm2_5_value);
             uint32_t dutyCycle = calculateDutyCycle(aqi);
             TIM_UpdateMatchValue(LPC_TIM0, MATCH_CHANNEL_0, (SystemCoreClock / 4) / PWM_FREQUENCY * dutyCycle / 100);
-            dutyCycle = DUTY_CYCLE_OFF;
         }
         else
         {
