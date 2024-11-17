@@ -1,49 +1,49 @@
-# **Instrucciones de Instalación**
+# **Installation Instructions**
 
-Este documento proporciona los pasos necesarios para instalar y configurar el entorno de desarrollo para trabajar con las placas STM32 (usando PlatformIO con `libopencm3`) y LPC1769 (usando MCU Expresso).
+This document provides the necessary steps to install and configure the development environment to work with STM32 boards (using PlatformIO with `libopencm3`) and LPC1769 (using MCU Expresso).
 
 ---
 
-## **Requisitos previos**
+## **Prerequisites**
 
-1. **Herramientas de desarrollo necesarias**:
+1. **Required Development Tools**:
 
-   - [PlatformIO](https://platformio.org/install/ide) (extensión integrada en Visual Studio Code).
+   - [PlatformIO](https://platformio.org/install/ide) (integrated extension for Visual Studio Code).
    - [MCU Expresso IDE](https://www.nxp.com/mcuxpresso).
-   - Compilador ARM GCC: Descarga desde [ARM Developer](https://developer.arm.com/Tools%20and%20Software/GNU%20Toolchain).
-   - Controladores USB para placas de desarrollo:
-     - STM32: ST-Link (descarga de [STMicroelectronics](https://www.st.com)).
-     - LPC1769: NXP LinkServer o drivers compatibles.
+   - ARM GCC Compiler: Download from [ARM Developer](https://developer.arm.com/Tools%20and%20Software/GNU%20Toolchain).
+   - USB drivers for development boards:
+     - STM32: ST-Link (download from [STMicroelectronics](https://www.st.com)).
+     - LPC1769: NXP LinkServer or compatible drivers.
 2. **Hardware**:
 
-   - Placa STM32 (ejemplo: STM32F103C8T6).
-   - Placa LPC1769 (NXP LPCXpresso1769).
-3. **Cables y adaptadores**:
+   - STM32 board (e.g., STM32F103C8T6).
+   - LPC1769 board (NXP LPCXpresso1769).
+3. **Cables and Adapters**:
 
-   - Cable micro-USB para comunicación.
-   - Adaptador o depurador compatible (ST-Link para STM32, NXP LinkServer para LPC1769).
+   - Micro-USB cable for communication.
+   - Compatible adapter or debugger (ST-Link for STM32, NXP LinkServer for LPC1769).
 
 ---
 
-## **Instrucciones de instalación**
+## **Installation Instructions**
 
-### **STM32 - PlatformIO en Visual Studio Code**
+### **STM32 - PlatformIO in Visual Studio Code**
 
-1. **Instalar PlatformIO**:
+1. **Install PlatformIO**:
 
-   - Abre Visual Studio Code.
-   - Ve a la sección de extensiones (`Ctrl+Shift+X`).
-   - Busca e instala `PlatformIO IDE`.
-2. **Clonar el repositorio**:
+   - Open Visual Studio Code.
+   - Go to the Extensions section (`Ctrl+Shift+X`).
+   - Search for and install `PlatformIO IDE`.
+2. **Clone the repository**:
 
-   - Abre la terminal y ejecuta:
+   - Open the terminal and run:
      ```bash
-     git clone https://github.com/usuario/proyecto-stm32.git
-     cd proyecto-stm32
+     git clone https://github.com/user/project-stm32.git
+     cd project-stm32
      ```
-3. **Configurar el entorno**:
+3. **Configure the environment**:
 
-   - Abre el archivo `platformio.ini` y verifica que esté configurado para tu placa:
+   - Open the `platformio.ini` file and verify it is set up for your board:
      ```ini
      [env:genericSTM32F103C8]
      platform = ststm32
@@ -53,19 +53,19 @@ Este documento proporciona los pasos necesarios para instalar y configurar el en
      debug_tool = stlink
      build_flags = -Og -g3
      ```
-4. **Compilar y cargar el proyecto**:
+4. **Compile and upload the project**:
 
-   - Compila el código con:
+   - Compile the code with:
      ```bash
      platformio run
      ```
-   - Carga el firmware en la placa:
+   - Upload the firmware to the board:
      ```bash
      platformio run --target upload
      ```
-5. **Depuración** (opcional):
+5. **Debugging** (optional):
 
-   - Conecta el depurador ST-Link y ejecuta:
+   - Connect the ST-Link debugger and run:
      ```bash
      platformio debug
      ```
@@ -74,68 +74,67 @@ Este documento proporciona los pasos necesarios para instalar y configurar el en
 
 ### **LPC1769 - MCU Expresso**
 
-1. **Instalar MCU Expresso IDE**:
+1. **Install MCU Expresso IDE**:
 
-   - Descarga e instala desde [NXP](https://www.nxp.com/mcuxpresso).
-   - Configura el entorno para usar el compilador ARM GCC.
-2. **Clonar el repositorio**:
+   - Download and install it from [NXP](https://www.nxp.com/mcuxpresso).
+   - Configure the environment to use the ARM GCC compiler.
+2. **Clone the repository**:
 
-   - Abre la terminal y ejecuta:
+   - Open the terminal and run:
      ```bash
-     git clone https://github.com/usuario/proyecto-lpc1769.git
-     cd proyecto-lpc1769
+     git clone https://github.com/user/project-lpc1769.git
+     cd project-lpc1769
      ```
-3. **Importar el proyecto**:
+3. **Import the project**:
 
-   - Abre MCU Expresso IDE.
-   - Ve a `File > Import > Existing Projects into Workspace`.
-   - Selecciona la carpeta del proyecto clonado.
-4. **Compilar el código**:
+   - Open MCU Expresso IDE.
+   - Go to `File > Import > Existing Projects into Workspace`.
+   - Select the folder of the cloned project.
+4. **Compile the code**:
 
-   - Haz clic derecho sobre el proyecto en el explorador de proyectos.
-   - Selecciona `Build Project`.
-5. **Cargar el firmware**:
+   - Right-click on the project in the project explorer.
+   - Select `Build Project`.
+5. **Upload the firmware**:
 
-   - Conecta la placa LPC1769 al PC.
-   - Haz clic en el botón `Debug` en el IDE.
-   - Verifica que el depurador (LinkServer) esté correctamente configurado.
-6. **Depuración**:
+   - Connect the LPC1769 board to the PC.
+   - Click the `Debug` button in the IDE.
+   - Ensure the debugger (LinkServer) is correctly configured.
+6. **Debugging**:
 
-   - Establece breakpoints en el código y usa las herramientas de depuración del IDE para inspeccionar el flujo del programa.
-
----
-
-## **Problemas comunes y soluciones**
-
-1. **Error de conexión al dispositivo**:
-
-   - Verifica que los controladores USB estén instalados correctamente.
-   - Asegúrate de que la placa esté en modo de programación (Bootloader o Debug).
-2. **Error de compilación**:
-
-   - Confirma que todas las dependencias estén instaladas.
-   - Revisa los directorios de las bibliotecas en `lib/` (para STM32) o las configuraciones del SDK (para LPC1769).
-3. **Placa no detectada**:
-
-   - Cambia el cable USB o usa un puerto USB diferente. (Recordar usar cable de datos verificar que no sea solo de carga)
-   - Asegúrate de que la placa esté encendida y conectada correctamente.
-   - LPC1769:
-
-     - 1ro probar desconectando los pines unido en JP3 y volver a conectar
-
-    ![1731853422937](image/install/1731853422937.png) 
-
-    4.**Caso placa detectada por el equipo pero no por el entrono de desarrollo**
-
-* LPC 1769: Seguir las configuraciones del siguiente link solo caso [configuración widows](https://support.microsoft.com/es-es/windows/no-se-puede-cargar-un-controlador-en-este-dispositivo-8eea34e5-ff4b-16ec-870d-61a4a43b3dd5).
-* STM32: Forzar un reseteo de la placa cargando un proyecto mientras se mantiene apretado el boton de RESET y soltarlo cuando este por cargar el programa. (Probar repetidamente)
+   - Set breakpoints in the code and use the IDE’s debugging tools to inspect the program flow.
 
 ---
 
-## **Recursos adicionales**
+## **Common Issues and Solutions**
 
-- [Documentación de PlatformIO](https://docs.platformio.org/en/latest/)
-- [Documentación de MCU Expresso IDE](https://www.nxp.com/design/software/development-software/mcuxpresso-ide:MCUXpresso-IDE)
+1. **Device connection error**:
+
+   - Ensure the USB drivers are installed correctly.
+   - Verify the board is in programming mode (Bootloader or Debug).
+2. **Compilation error**:
+
+   - Confirm all dependencies are installed.
+   - Check the library directories in `lib/` (for STM32) or the SDK configurations (for LPC1769).
+3. **Board not detected**:
+
+   - Replace the USB cable or use a different USB port (make sure to use a data cable, not a charge-only cable).
+   - Ensure the board is powered on and properly connected.
+   - For LPC1769:
+     - First, disconnect the pins joined at JP3 and reconnect.
+
+     ![1731853422937](image/install/1731853422937.png)
+
+4. **Board detected by the PC but not by the development environment**:
+
+   - **LPC1769**: Follow the configurations in the following link for Windows-specific setup: [Windows Configuration](https://support.microsoft.com/es-es/windows/no-se-puede-cargar-un-controlador-en-este-dispositivo-8eea34e5-ff4b-16ec-870d-61a4a43b3dd5).
+   - **STM32**: Force a board reset by loading a project while holding the RESET button and releasing it during the upload. Repeat if necessary.
+
+---
+
+## **Additional Resources**
+
+- [PlatformIO Documentation](https://docs.platformio.org/en/latest/)
+- [MCU Expresso IDE Documentation](https://www.nxp.com/design/software/development-software/mcuxpresso-ide:MCUXpresso-IDE)
 - [LibOpenCM3 API Reference](https://libopencm3.org/)
 
 ---
