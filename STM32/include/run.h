@@ -6,8 +6,8 @@
  * ADC data acquisition, and frame processing. It also includes the stack overflow hook function.
  */
 
-#ifndef TASKS_H
-#define TASKS_H
+#ifndef RUN_H
+#define RUN_H
 
 #include "frame.h"  /**< Frame processing functions */
 #include "global.h" /**< Global definitions and declarations */
@@ -36,17 +36,6 @@ void uart_task(void* pvParameters);
 void adc_task(void* pvParameters);
 
 /**
- * @brief Task for processing received frames.
- *
- * This task continuously processes received frames in an infinite loop.
- * It also monitors the stack high water mark for the task and prints it
- * to the console.
- *
- * @param pvParameters Pointer to the arguments passed to the task (unused).
- */
-void frame_processing_task(void* pvParameters);
-
-/**
  * @brief Stack overflow hook function.
  *
  * This function is called when a stack overflow is detected in a FreeRTOS task.
@@ -57,4 +46,4 @@ void frame_processing_task(void* pvParameters);
  */
 void vApplicationStackOverflowHook(TaskHandle_t xTask, char* pcTaskName);
 
-#endif // TASKS_H
+#endif // RUN_H

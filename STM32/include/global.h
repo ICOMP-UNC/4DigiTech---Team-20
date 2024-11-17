@@ -28,18 +28,12 @@
 #define START_CHARACTER_2 0x4D /**< Second start character (0x4D in hex) */
 #define FRAME_LENGTH 28        /**< Length of the data frame in bytes */
 #define UART_TX_BUFFER_SIZE 32 /**< Size of the UART transmission buffer */
-#define RX_BUFFER_SIZE 32      /**< Size of the receive buffer */
+#define ADC_BUFFER_SIZE 10     /**< Size of the ADC buffer for averaging */
 
-extern volatile uint8_t rx_buffer[RX_BUFFER_SIZE];           /**< Buffer to store received UART data */
-extern volatile uint8_t rx_index;                            /**< Index for the UART receive buffer */
 extern volatile uint16_t adc_value;                          /**< ADC value acquired via DMA */
 extern volatile uint8_t uart_tx_buffer[UART_TX_BUFFER_SIZE]; /**< Buffer for UART transmission data */
 extern volatile bool dma_transfer_completed;                 /**< Flag indicating completion of a DMA transfer */
-extern volatile uint8_t received_data;                       /**< Last received byte from UART */
-extern volatile bool frame_received;           /**< Flag indicating that a complete data frame has been received */
-extern int aqi;                                /**< Air Quality Index (AQI) value calculated from PM2.5 data */
-extern TaskHandle_t uartTaskHandle;            /**< Handle for the UART task */
-extern TaskHandle_t adcTaskHandle;             /**< Handle for the ADC task */
-extern TaskHandle_t frameProcessingTaskHandle; /**< Handle for the frame processing task */
+extern TaskHandle_t uartTaskHandle;                          /**< Handle for the UART task */
+extern TaskHandle_t adcTaskHandle;                           /**< Handle for the ADC task */
 
 #endif // GLOBAL_H

@@ -1,23 +1,5 @@
 #include "frame.h"
 
-void process_received_frame(void)
-{
-    if (frame_received)
-    {
-        frame_received = false;
-
-        uint16_t calculated_checksum = calculate_checksum((const uint8_t*)rx_buffer, UART_TX_BUFFER_SIZE - 2);
-        uint16_t received_checksum = (rx_buffer[UART_TX_BUFFER_SIZE - 2] << 8) | rx_buffer[UART_TX_BUFFER_SIZE - 1];
-
-        if (calculated_checksum == received_checksum)
-        {
-            uint16_t pm2_5_value = (rx_buffer[6] << 8) | rx_buffer[7];
-            pm2_5_value *= 10;
-            aqi = calculate_aqi_from_pm2_5(pm2_5_value);
-        }
-    }
-}
-
 uint16_t calculate_checksum(const uint8_t* data, uint16_t length)
 {
     uint16_t checksum = 0;
@@ -51,24 +33,4 @@ void send_data_frame(uint16_t* sensor_data)
         usart_send_blocking(USART2, uart_tx_buffer[i]);
     }
     gpio_toggle(GPIOC, GPIO13);
-}
-
-int calculate_aqi_from_pm2_5(uint16_t pm2_5)
-{
-    if (pm2_5 <= 120)
-        return (pm2_5 * 50) / 120;
-    else if (pm2_5 <= 354)
-        return 50 + ((pm2_5 - 120) * 50) / (354 - 120);
-    else if (pm2_5 <= 554)
-        return 100 + ((pm2_5 - 354) * 50) / (554 - 354);
-    else if (pm2_5 <= 1504)
-        return 150 + ((pm2_5 - 554) * 100) / (1504 - 554);
-    else if (pm2_5 <= 2504)
-        return 200 + ((pm2_5 - 1504) * 100) / (2504 - 1504);
-    else if (pm2_5 <= 3504)
-        return 300 + ((pm2_5 - 2504) * 100) / (3504 - 2504);
-    else if (pm2_5 <= 5004)
-        return 400 + ((pm2_5 - 3504) * 100) / (5004 - 3504);
-    else
-        return 500;
 }

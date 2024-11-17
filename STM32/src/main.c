@@ -24,7 +24,7 @@
 
 #include "config.h" /**< Configuration functions for system clock, GPIO, UART, and ADC */
 #include "global.h" /**< Global definitions and declarations */
-#include "tasks.h"  /**< Task functions for UART, ADC, and frame processing */
+#include "run.h"    /**< Task functions for UART, ADC, and frame processing */
 
 /**
  * @brief Main entry point of the application.
@@ -46,7 +46,6 @@ int main(void)
     adc_setup();
     xTaskCreate(uart_task, "UART Task", 128, NULL, configMAX_PRIORITIES - 1, NULL);
     xTaskCreate(adc_task, "ADC Task", 128, NULL, configMAX_PRIORITIES - 2, NULL);
-    xTaskCreate(frame_processing_task, "Frame Processing Task", 128, NULL, configMAX_PRIORITIES - 3, NULL);
     vTaskStartScheduler();
     while (1)
     {

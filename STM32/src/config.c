@@ -20,18 +20,15 @@ void uart_setup(void)
     rcc_periph_clock_enable(RCC_USART2);
 
     gpio_set_mode(GPIOA, GPIO_MODE_OUTPUT_50_MHZ, GPIO_CNF_OUTPUT_ALTFN_PUSHPULL, GPIO_USART2_TX);
-    gpio_set_mode(GPIOA, GPIO_MODE_INPUT, GPIO_CNF_INPUT_FLOAT, GPIO_USART2_RX);
 
     usart_set_baudrate(USART2, 9600);
     usart_set_databits(USART2, 8);
     usart_set_stopbits(USART2, USART_STOPBITS_1);
-    usart_set_mode(USART2, USART_MODE_TX_RX);
+    usart_set_mode(USART2, USART_MODE_TX);
     usart_set_parity(USART2, USART_PARITY_NONE);
     usart_set_flow_control(USART2, USART_FLOWCONTROL_NONE);
 
     usart_enable(USART2);
-    usart_enable_rx_interrupt(USART2);
-    nvic_enable_irq(NVIC_USART2_IRQ);
 }
 
 void adc_setup(void)

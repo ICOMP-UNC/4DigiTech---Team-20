@@ -30,18 +30,6 @@
 void handle_dma_adc_transfer(void);
 
 /**
- * @brief USART2 interrupt service routine.
- *
- * This ISR is triggered when data is received on USART2. It reads the received
- * data and processes it according to a predefined protocol. The protocol expects
- * the first two characters to be specific start characters. If the received data
- * does not match these start characters, the reception is reset. The received data
- * is stored in a buffer, and when the buffer is full, a flag is set to indicate
- * that a complete frame has been received.
- */
-void usart2_isr(void);
-
-/**
  * @brief DMA1 Channel 1 Interrupt Service Routine.
  *
  * This ISR handles the DMA1 Channel 1 interrupts. It checks for the transfer complete

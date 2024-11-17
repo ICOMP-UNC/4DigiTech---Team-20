@@ -36,16 +36,14 @@ void gpio_setup(void);
  *
  * This function configures the UART peripheral (USART2) with the following settings:
  * - Enables the clock for GPIOA and USART2 peripherals.
- * - Configures GPIOA pins for USART2 TX (transmit) and RX (receive) functionality.
+ * - Configures GPIOA pins for USART2 TX (transmit) functionality.
  * - Sets the baud rate to 9600.
  * - Configures the data bits to 8.
  * - Sets the stop bits to 1.
- * - Configures the UART mode to transmit and receive.
+ * - Configures the UART mode to transmit.
  * - Disables parity.
  * - Disables flow control.
  * - Enables the USART2 peripheral.
- * - Enables interrupt for USART2 reception.
- * - Enables the NVIC interrupt for USART2.
  */
 void uart_setup(void);
 

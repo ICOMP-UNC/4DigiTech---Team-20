@@ -1,4 +1,4 @@
-#include "tasks.h"
+#include "run.h"
 
 void uart_task(void* args)
 {
@@ -37,19 +37,7 @@ void adc_task(void* args)
         handle_dma_adc_transfer();
         UBaseType_t adcHighWaterMark = uxTaskGetStackHighWaterMark(adcTaskHandle);
         printf("ADC Task Stack High Water Mark: %lu\n", adcHighWaterMark);
-        vTaskDelay(pdMS_TO_TICKS(100));
-    }
-}
-
-void frame_processing_task(void* args)
-{
-    (void)args;
-    while (1)
-    {
-        process_received_frame();
-        UBaseType_t frameHighWaterMark = uxTaskGetStackHighWaterMark(frameProcessingTaskHandle);
-        printf("Frame Processing Task Stack High Water Mark: %lu\n", frameHighWaterMark);
-        vTaskDelay(pdMS_TO_TICKS(1000));
+        vTaskDelay(pdMS_TO_TICKS(500));
     }
 }
 
