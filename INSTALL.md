@@ -124,7 +124,7 @@ This document provides the necessary steps to install and configure the developm
    - For LPC1769:
      - First, disconnect the pins joined at JP3 and reconnect.
 
-     ![1731853422937](https://drive.google.com/file/d/1B91R4Fd4a2y3AZ4Lca11ZHd0JePqkDGg/preview)
+     ![1731853422937](img\installll.JPG)
 
 4. **Board detected by the PC but not by the development environment**:
 
