@@ -38,8 +38,9 @@ This document provides the necessary steps to install and configure the developm
 
    - Open the terminal and run:
      ```bash
-     git clone https://github.com/user/project-stm32.git
-     cd project-stm32
+     git clone https://github.com/ICOMP-UNC/4DigiTech---Team-20.git
+     cd 4DigiTech---Team-20
+     cd STM32
      ```
 3. **Configure the environment**:
 
@@ -82,8 +83,9 @@ This document provides the necessary steps to install and configure the developm
 
    - Open the terminal and run:
      ```bash
-     git clone https://github.com/user/project-lpc1769.git
-     cd project-lpc1769
+     git clone https://github.com/ICOMP-UNC/4DigiTech---Team-20.git
+     cd 4DigiTech---Team-20
+     cd STM32
      ```
 3. **Import the project**:
 
@@ -122,7 +124,7 @@ This document provides the necessary steps to install and configure the developm
    - For LPC1769:
      - First, disconnect the pins joined at JP3 and reconnect.
 
-     ![1731853422937](image/install/1731853422937.png)
+     ![1731853422937](https://drive.google.com/file/d/1B91R4Fd4a2y3AZ4Lca11ZHd0JePqkDGg/preview)
 
 4. **Board detected by the PC but not by the development environment**:
 
