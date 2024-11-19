@@ -67,5 +67,4 @@ void adc_setup(void)
     nvic_enable_irq(NVIC_DMA1_CHANNEL1_IRQ);
 
     dma_enable_channel(DMA1, DMA_CHANNEL1);
-    adc_start_conversion_direct(ADC1);
 }

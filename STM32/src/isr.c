@@ -6,6 +6,9 @@ void dma1_channel1_isr(void)
     {
         dma_clear_interrupt_flags(DMA1, DMA_CHANNEL1, DMA_TCIF);
         dma_transfer_completed = true;
+        BaseType_t xHigherPriorityTaskWoken = pdFALSE;
+        xSemaphoreGiveFromISR(dmaSemaphore, &xHigherPriorityTaskWoken);
+        portYIELD_FROM_ISR(xHigherPriorityTaskWoken);
     }
 
     if (dma_get_interrupt_flag(DMA1, DMA_CHANNEL1, DMA_TEIF))

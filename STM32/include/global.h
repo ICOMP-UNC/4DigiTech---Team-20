@@ -11,6 +11,7 @@
 #define GLOBAL_H
 
 #include "FreeRTOS.h"               /**< FreeRTOS header for real-time operating system */
+#include "semphr.h"                 /**< Header for using FreeRTOS semaphores */
 #include "task.h"                   /**< Header for creating and managing FreeRTOS tasks */
 #include <libopencm3/cm3/nvic.h>    /**< NVIC configuration header for handling interrupts */
 #include <libopencm3/stm32/adc.h>   /**< ADC peripheral configuration header */
@@ -35,5 +36,6 @@ extern volatile uint8_t uart_tx_buffer[UART_TX_BUFFER_SIZE]; /**< Buffer for UAR
 extern volatile bool dma_transfer_completed;                 /**< Flag indicating completion of a DMA transfer */
 extern TaskHandle_t uartTaskHandle;                          /**< Handle for the UART task */
 extern TaskHandle_t adcTaskHandle;                           /**< Handle for the ADC task */
+extern SemaphoreHandle_t dmaSemaphore;                       /**< Semaphore for DMA transfer synchronization */
 
 #endif // GLOBAL_H

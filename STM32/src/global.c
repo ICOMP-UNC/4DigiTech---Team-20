@@ -5,3 +5,4 @@ volatile uint8_t uart_tx_buffer[UART_TX_BUFFER_SIZE]; /**< Buffer for UART trans
 volatile bool dma_transfer_completed = false;         /**< Flag indicating completion of a DMA transfer */
 TaskHandle_t uartTaskHandle = NULL;                   /**< Handle for the UART task */
 TaskHandle_t adcTaskHandle = NULL;                    /**< Handle for the ADC task */
+SemaphoreHandle_t dmaSemaphore;                       /**< Semaphore for DMA transfer synchronization */

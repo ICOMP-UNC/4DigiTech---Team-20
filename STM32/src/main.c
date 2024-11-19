@@ -44,8 +44,25 @@ int main(void)
     gpio_setup();
     uart_setup();
     adc_setup();
-    xTaskCreate(uart_task, "UART Task", 128, NULL, configMAX_PRIORITIES - 1, NULL);
-    xTaskCreate(adc_task, "ADC Task", 128, NULL, configMAX_PRIORITIES - 2, NULL);
+    dmaSemaphore = xSemaphoreCreateBinary();
+    if (dmaSemaphore == NULL)
+    {
+        printf("Failed to create semaphore\n");
+        while (1)
+            ;
+    }
+    if (xTaskCreate(uart_task, "UART Task", 128, NULL, configMAX_PRIORITIES - 1, &uartTaskHandle) != pdPASS)
+    {
+        printf("Failed to create UART Task\n");
+        while (1)
+            ;
+    }
+    if (xTaskCreate(adc_task, "ADC Task", 128, NULL, configMAX_PRIORITIES - 2, &adcTaskHandle) != pdPASS)
+    {
+        printf("Failed to create ADC Task\n");
+        while (1)
+            ;
+    }
     vTaskStartScheduler();
     while (1)
     {
