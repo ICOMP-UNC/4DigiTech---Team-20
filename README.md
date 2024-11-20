@@ -60,5 +60,10 @@ This modular approach ensures scalability and simplifies future integrations, su
 │   ├── manual/          # Manual tests performed
 └── README.md            # This file
 ```
-## **Installation** ##
+## **Installation** 
 For detailed installation instructions, refer to the [INSTALL.md](INSTALL.md) file in the docs/ directory.
+
+## **Video Demostration**
+For a detailed demonstration of the project, watch the following video:
+
+[Air Quality Monitoring and Fan Control System Demo](https://www.youtube.com/watch?v=KT5ZY0GuZFc)
