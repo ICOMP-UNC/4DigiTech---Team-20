@@ -1,0 +1,61 @@
+name: "Doc check"
+description: "Code documentation generation with Doxygen"
+
+inputs:
+  path:
+    required: true
+    description: "Path to the directory containing Doxyfile"
+    default: .
+
+runs:
+  using: "composite"
+  steps:
+    - name: "Generate documentation"
+      shell: bash
+      run: |
+          # Define the path to the Doxyfile based on the input path
+          DOX_CONF_FILE="${{ inputs.path }}/Doxyfile"
+
+          # Check if the Doxyfile exists in the specified directory
+          if [ ! -f "$DOX_CONF_FILE" ]; then
+              echo "Error: Doxyfile not found in $DOX_CONF_FILE"
+              exit 1
+          fi
+
+          # Configure the Doxyfile to set the OUTPUT_DIRECTORY and INPUT paths
+          {
+              echo "OUTPUT_DIRECTORY = ${{ inputs.path }}/doc"
+              echo "INPUT = ${{ inputs.path }}/src ${{ inputs.path }}/include"
+          } > "$DOX_CONF_FILE"
+
+          # Generate documentation
+          sudo dot -c
+
+          ERROR_FILE_FLAG="${{ inputs.path }}/dox_errors.txt"
+
+          doxygen "$DOX_CONF_FILE" 2> "$ERROR_FILE_FLAG"
+
+          if [ -s "$ERROR_FILE_FLAG" ]; then
+              echo "Error: There are some files that are not documented correctly"
+              cat "$ERROR_FILE_FLAG"
+              exit 1
+          else
+              echo "All files are documented correctly. Niiiceee"
+              exit 0
+          fi
+
+    # Upload errors as an artifact, when failed
+    - uses: actions/upload-artifact@v4
+      if: failure()
+      with:
+        name: "Doxygen Errors - ${{ inputs.path }}"
+        path: ${{ inputs.path }}/dox_errors.txt
+        retention-days: 1
+
+    # Upload documentation as an artifact, when successful
+    - uses: actions/upload-artifact@v4
+      if: success()
+      with:
+        name: "Doxygen Documentation - ${{ inputs.path }}"
+        path: ${{ inputs.path }}/doc
+        retention-days: 1

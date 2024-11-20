@@ -1,0 +1,53 @@
+name: QA Workflow
+
+on:
+  workflow_dispatch:
+  pull_request:
+    types: [synchronize, opened, reopened, ready_for_review]
+
+jobs:
+  QAFlow:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Install Arm GNU Toolchain (arm-none-eabi-gcc)
+        uses: carlosperate/arm-none-eabi-gcc-action@v1
+        with:
+          release: "13.2.Rel1"
+
+      - name: Checkout repository
+        uses: actions/checkout@v3
+        with:
+          submodules: recursive
+
+      - name: Install dependencies
+        uses: awalsh128/cache-apt-pkgs-action@latest
+        with:
+          packages: doxygen gcovr lcov cppcheck graphviz clang-format make
+          version: 1.0
+
+      - name: Run style check for STM32
+        uses: ./.github/actions/style
+        with:
+          path: STM32
+      
+      - name: Run style check for LPC1769
+        uses: ./.github/actions/style
+        with:
+          path: LPC1769
+  
+      - name: Run documentation check for STM32
+        uses: ./.github/actions/document
+        with:
+          path: STM32
+
+      - name: Run documentation check for LPC1769
+        uses: ./.github/actions/document
+        with:
+          path: LPC1769
+      
+      - name: Build STM32 Project with PlatformIO and LPC1769 Project with Make
+        uses: ./.github/actions/build
+        with:
+          path_stm32: STM32
+          path_lpc: LPC1769

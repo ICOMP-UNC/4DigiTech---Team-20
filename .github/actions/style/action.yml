@@ -1,0 +1,41 @@
+name: "Style check"
+description: "Style check using clang-format"
+
+inputs:
+  path:
+    required: true
+    description: "Path to the folder (either STM32 or LPC1769)"
+    default: .
+
+runs:
+  using: "composite"
+  steps:
+    - name: "Run clang-format"
+      shell: bash
+      run: |
+        # Path to the specified project
+        PROJECT_PATH=${{ inputs.path }}
+        SOURCE_FILES=$(find $PROJECT_PATH/src -type f \( -name "*.cpp" -or -name "*.hpp" -or -name "*.h" -or -name "*.c" \) | tr "\n" " ")
+        SOURCE_FILES+=" $(find $PROJECT_PATH/include -type f \( -name "*.cpp" -or -name "*.hpp" -or -name "*.h" -or -name "*.c" \) | tr "\n" " ")"
+
+        ERROR_FILE_FLAG=$PROJECT_PATH/clang_format_errors.txt
+
+        echo "Running clang-format for $PROJECT_PATH: $SOURCE_FILES"
+
+        clang-format -n $SOURCE_FILES 2> ${ERROR_FILE_FLAG}
+
+        if [ -s $ERROR_FILE_FLAG ]; then
+            echo "Error: There are some files in $PROJECT_PATH that are not formatted correctly"
+            cat $ERROR_FILE_FLAG
+            exit 1
+        else
+            echo "All files in $PROJECT_PATH are formatted correctly."
+        fi
+
+    # Upload errors as an artifact, if there are formatting issues
+    - uses: actions/upload-artifact@v4
+      if: failure()
+      with:
+        name: "Clang-format errors for ${{ inputs.path }}"
+        path: ${{ inputs.path }}/clang_format_errors.txt
+        retention-days: 1
